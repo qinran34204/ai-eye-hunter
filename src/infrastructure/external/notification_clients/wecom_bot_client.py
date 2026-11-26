@@ -26,6 +26,12 @@ class WeComBotClient(NotificationClient):
         message = self._build_message(product_data, reason)
         markdown_lines = [f"## {message.notification_title}", ""]
         markdown_lines.append(f"- 价格: {message.price}")
+        if message.spec:
+            markdown_lines.append(f"- 规格: {message.spec}")
+        if message.seller:
+            markdown_lines.append(f"- 卖家: {message.seller}")
+        if message.risk_tags:
+            markdown_lines.append(f"- 风险: {', '.join(message.risk_tags)}")
         markdown_lines.append(f"- 原因: {message.reason}")
         if message.mobile_link:
             markdown_lines.append(f"- 手机端链接: [{message.mobile_link}]({message.mobile_link})")

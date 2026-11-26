@@ -17,8 +17,12 @@ from src.services.dashboard_payloads import (
     summarize_result_file,
 )
 from src.services.result_storage_service import list_result_filenames
+from src.infrastructure.persistence.storage_names import build_result_filename
 
 MAX_RECENT_ACTIVITIES = 8
+
+# 拍卖站监控为独立模块，概览（监控概览）只统计闲鱼任务与闲鱼结果文件
+_AUCTION_KEYWORD = "拍卖站"
 
 
 def _build_summary_metrics(tasks: list[Task], summary_list: list[dict[str, Any]], last_updated_at: Any) -> dict[str, Any]:
@@ -35,6 +39,10 @@ def _build_summary_metrics(tasks: list[Task], summary_list: list[dict[str, Any]]
 
 
 async def build_dashboard_snapshot(tasks: list[Task]) -> dict[str, Any]:
+    # 概览只统计闲鱼模块，排除内置拍卖站监控任务
+    tasks = [task for task in tasks if getattr(task, "source", "xianyu") != "auction"]
+    auction_filename = build_result_filename(_AUCTION_KEYWORD)
+
     task_lookup = {normalize_text(task.keyword): task for task in tasks}
     task_summaries: dict[str, dict[str, Any]] = {
         task.task_name: build_empty_summary(task) for task in tasks
@@ -43,6 +51,8 @@ async def build_dashboard_snapshot(tasks: list[Task]) -> dict[str, Any]:
     latest_updated_at = None
 
     for filename in await list_result_filenames():
+        if filename == auction_filename:
+            continue
         summary, activities, file_latest_time = await summarize_result_file(filename, task_lookup)
         if summary:
             task_summaries[summary["task_name"]] = summary

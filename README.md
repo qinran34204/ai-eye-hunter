@@ -1,8 +1,10 @@
-# 闲鱼智能监控系统
+# AI Eye Hunter
 
 [中文] ｜ [English](README_EN.md)
 
-基于 Playwright 和 AI 的闲鱼多任务实时监控，提供完整的 Web 管理界面。
+基于 Playwright 和 AI 的多平台商品实时监控（闲鱼 + 拍卖站），提供完整的 Web 管理界面。
+
+> **衍生说明**：本项目 fork 自 [Usagi-org/ai-goofish-monitor](https://github.com/Usagi-org/ai-goofish-monitor)，沿用其 MIT 开源协议，原作者版权与许可证见 [LICENSE](LICENSE)。在此基础上新增了拍卖站适配器、爬宠活体 AI 收品标准与通知模板改造。
 
 
 ## 核心特性
@@ -26,7 +28,7 @@
 ## 🐳 Docker 部署（推荐）
 
 ```bash
-git clone https://github.com/Usagi-org/ai-goofish-monitor && cd ai-goofish-monitor
+git clone https://github.com/qinran34204/ai-eye-hunter && cd ai-eye-hunter
 cp .env.example .env
 vim .env # 填写相关配置项
 docker compose up -d

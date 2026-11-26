@@ -41,6 +41,12 @@ const routes = [
         meta: { titleKey: 'routes.results', requiresAuth: true },
       },
       {
+        path: 'auction',
+        name: 'Auction',
+        component: () => import('@/views/AuctionView.vue'),
+        meta: { titleKey: 'routes.auction', requiresAuth: true },
+      },
+      {
         path: 'logs',
         name: 'Logs',
         component: () => import('@/views/LogsView.vue'),

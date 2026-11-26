@@ -74,7 +74,8 @@ def test_webhook_client_renders_json_templates(monkeypatch):
         )
     )
 
-    assert "task=%F0%9F%9A%A8+%E6%96%B0%E6%8E%A8%E8%8D%90%21+Sony+A7M4" in captured["url"]
+    assert "AI+Eye+Hunter" in captured["url"]
+    assert "Sony+A7M4" in captured["url"]
     assert captured["headers"]["Authorization"] == "Bearer token"
     assert captured["json"]["message"].startswith("价格: 9999")
     assert captured["json"]["link"] == "https://www.goofish.com/item/123"

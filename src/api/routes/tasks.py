@@ -153,13 +153,14 @@ async def update_task(
 
         current_mode = getattr(existing_task, "decision_mode", "ai") or "ai"
         target_mode = task_update.decision_mode or current_mode
+        is_auction = getattr(existing_task, "source", "xianyu") == "auction"
         description_changed = (
             task_update.description is not None
             and task_update.description != existing_task.description
         )
         switched_to_ai = current_mode != "ai" and target_mode == "ai"
 
-        if target_mode == "keyword":
+        if target_mode == "keyword" and not is_auction:
             final_rules = (
                 task_update.keyword_rules
                 if task_update.keyword_rules is not None
@@ -167,7 +168,7 @@ async def update_task(
             )
             if not _has_keyword_rules(final_rules):
                 raise HTTPException(status_code=400, detail="关键词模式下至少需要一个关键词。")
-        if target_mode == "ai" and (description_changed or switched_to_ai):
+        if target_mode == "ai" and not is_auction and (description_changed or switched_to_ai):
             print(f"检测到任务 {task_id} 需要刷新 AI 标准文件，开始重新生成...")
             try:
                 description_for_ai = (
@@ -223,6 +224,9 @@ async def delete_task(
     if not task:
         raise HTTPException(status_code=404, detail="任务未找到")
 
+    if getattr(task, "source", "xianyu") == "auction":
+        raise HTTPException(status_code=400, detail="拍卖站监控为系统内置任务，不可删除。")
+
     await process_service.stop_task(task_id)
     success = await service.delete_task(task_id)
     if not success:
@@ -259,6 +263,11 @@ async def start_task(
     task = await task_service.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务未找到")
+
+    if getattr(task, "source", "xianyu") == "auction":
+        await task_service.update_task(task_id, TaskUpdate(enabled=True))
+        return {"message": f"拍卖站监控 '{task.task_name}' 已启用后台轮询"}
+
     if not task.enabled:
         raise HTTPException(status_code=400, detail="任务已被禁用，无法启动")
     if task.is_running:
@@ -277,5 +286,10 @@ async def stop_task(
     task = await task_service.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务未找到")
+
+    if getattr(task, "source", "xianyu") == "auction":
+        await task_service.update_task(task_id, TaskUpdate(enabled=False, is_running=False))
+        return {"message": f"拍卖站监控 '{task.task_name}' 已停止轮询"}
+
     await process_service.stop_task(task_id)
     return {"message": f"任务ID {task_id} 已发送停止信号"}

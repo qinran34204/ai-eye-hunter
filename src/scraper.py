@@ -84,6 +84,28 @@ def _is_login_url(url: str) -> bool:
     return "passport.goofish.com" in lowered or "mini_login" in lowered
 
 
+def split_search_terms(keyword: str) -> list[str]:
+    """把任务搜索词按逗号/顿号/分号/换行拆成去重后的搜索词列表。
+
+    单关键词任务返回原词；多关键词任务逐词搜索、跨词合并去重。
+    """
+    if keyword is None:
+        return []
+    parts = re.split(r"[\n,，、;；/]+", str(keyword))
+    terms: list[str] = []
+    seen = set()
+    for part in parts:
+        text = part.strip()
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(text)
+    return terms
+
+
 def _resolve_browser_channel() -> str:
     global EDGE_DOCKER_WARNING_PRINTED
     if RUNNING_IN_DOCKER:
@@ -504,9 +526,29 @@ async def scrape_user_profile(context, user_id: str) -> dict:
 
 
 async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
+    """任务入口：支持一个任务配置多个搜索词，逐词串行爬取并合并处理计数。"""
+    terms = split_search_terms(task_config.get("keyword", ""))
+    if not terms:
+        terms = [str(task_config.get("keyword", "")).strip()]
+    if len(terms) <= 1:
+        return await _run_single_task(task_config, debug_limit)
+
+    total = 0
+    task_name = task_config.get("task_name", "")
+    log_time(f"任务 '{task_name}' 共 {len(terms)} 个搜索词，将逐词爬取: {', '.join(terms)}")
+    for idx, term in enumerate(terms):
+        if idx > 0:
+            log_time(f"=== 切换到搜索词: {term} ===")
+        sub_config = dict(task_config)
+        sub_config["keyword"] = term
+        total += await _run_single_task(sub_config, debug_limit)
+    return total
+
+
+async def _run_single_task(task_config: dict, debug_limit: int = 0):
     """
     【核心执行器】
-    根据单个任务配置，异步爬取闲鱼商品数据，并对每个新发现的商品进行实时的、独立的AI分析和通知。
+    根据单个任务配置（单个搜索词），异步爬取闲鱼商品数据，并对每个新发现的商品进行实时的、独立的AI分析和通知。
     """
     keyword = task_config["keyword"]
     max_pages = task_config.get("max_pages", 1)

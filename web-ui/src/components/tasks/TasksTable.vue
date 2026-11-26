@@ -39,6 +39,7 @@ const props = defineProps<Props>()
 const { t } = useI18n()
 const isStopping = (id: number) => props.stoppingIds?.has(id) ?? false
 const isKeywordMode = (task: Task) => task.decision_mode === 'keyword'
+const isAuction = (task: Task) => task.source === 'auction'
 const nowMs = ref(Date.now())
 let timer: number | null = null
 
@@ -122,6 +123,14 @@ const emit = defineEmits<{
                   {{ task.task_name }}
                 </h3>
                 <Badge
+                  v-if="isAuction(task)"
+                  variant="outline"
+                  class="border-none px-2 py-0.5 text-[10px] font-black bg-amber-50 text-amber-600"
+                >
+                  拍卖站
+                </Badge>
+                <Badge
+                  v-else
                   variant="outline"
                   :class="[
                     'border-none px-2 py-0.5 text-[10px] font-black',
@@ -164,43 +173,59 @@ const emit = defineEmits<{
               <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 {{ t('tasks.table.headers.crawl') }}
               </p>
-              <p class="mt-2 text-sm font-bold text-slate-700">
-                ¥{{ task.min_price || 0 }} - {{ task.max_price || 'MAX' }}
-              </p>
-              <div class="mt-2 flex flex-wrap gap-1.5">
-                <Badge variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
-                  {{ task.personal_only ? t('tasks.table.personalOnly') : t('common.all') }}
-                </Badge>
-                <Badge variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
-                  {{ task.free_shipping ? t('tasks.table.freeShipping') : t('common.all') }}
-                </Badge>
-                <Badge v-if="task.region" variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
-                  <MapPin class="mr-1 h-3 w-3" />
-                  {{ task.region }}
-                </Badge>
-              </div>
+              <template v-if="isAuction(task)">
+                <p class="mt-2 text-sm font-bold text-slate-700">玉米蛇 · 王蛇</p>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  <Badge variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
+                    拍卖站在拍名单
+                  </Badge>
+                </div>
+              </template>
+              <template v-else>
+                <p class="mt-2 text-sm font-bold text-slate-700">
+                  ¥{{ task.min_price || 0 }} - {{ task.max_price || 'MAX' }}
+                </p>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  <Badge variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
+                    {{ task.personal_only ? t('tasks.table.personalOnly') : t('common.all') }}
+                  </Badge>
+                  <Badge variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
+                    {{ task.free_shipping ? t('tasks.table.freeShipping') : t('common.all') }}
+                  </Badge>
+                  <Badge v-if="task.region" variant="outline" class="border-slate-200/70 bg-slate-50 text-slate-500">
+                    <MapPin class="mr-1 h-3 w-3" />
+                    {{ task.region }}
+                  </Badge>
+                </div>
+              </template>
             </div>
 
             <div class="rounded-xl border border-slate-200/70 bg-white/80 p-3">
               <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 {{ t('tasks.table.headers.schedule') }}
               </p>
-              <p class="mt-2 text-sm font-bold" :class="resolveCountdownTone(task)">
-                {{ resolveCountdownText(task) }}
-              </p>
-              <p v-if="resolveNextRunLabel(task)" class="mt-1 text-xs text-slate-500">
-                {{ resolveNextRunLabel(task) }}
-              </p>
-              <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1">
-                  <Clock class="h-3.5 w-3.5" />
-                  {{ task.cron || 'MANUAL' }}
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <Layers class="h-3.5 w-3.5" />
-                  {{ task.max_pages || 3 }}P
-                </span>
-              </div>
+              <template v-if="isAuction(task)">
+                <p class="mt-2 text-sm font-bold text-slate-700">后台轮询</p>
+                <p class="mt-1 text-xs text-slate-500">自动采集在拍名单</p>
+              </template>
+              <template v-else>
+                <p class="mt-2 text-sm font-bold" :class="resolveCountdownTone(task)">
+                  {{ resolveCountdownText(task) }}
+                </p>
+                <p v-if="resolveNextRunLabel(task)" class="mt-1 text-xs text-slate-500">
+                  {{ resolveNextRunLabel(task) }}
+                </p>
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span class="inline-flex items-center gap-1">
+                    <Clock class="h-3.5 w-3.5" />
+                    {{ task.cron || 'MANUAL' }}
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <Layers class="h-3.5 w-3.5" />
+                    {{ task.max_pages || 3 }}P
+                  </span>
+                </div>
+              </template>
             </div>
 
             <div class="rounded-xl border border-slate-200/70 bg-white/80 p-3 sm:col-span-2">
@@ -209,12 +234,18 @@ const emit = defineEmits<{
                   <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                     {{ t('tasks.table.headers.mode') }}
                   </p>
-                  <p class="mt-2 text-sm font-semibold text-slate-700">
+                  <p v-if="isAuction(task)" class="mt-2 text-sm font-semibold text-slate-700">
+                    重点监控
+                  </p>
+                  <p v-else class="mt-2 text-sm font-semibold text-slate-700">
                     {{ resolveAccountStrategyLabel(task) }} · {{ resolveAccountName(task) }}
                   </p>
                 </div>
 
-                <div v-if="isKeywordMode(task)" class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                <div v-if="isAuction(task)" class="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                  {{ t('tasks.table.keywordStrategies', { count: task.keyword_rules?.length || 0 }) }}
+                </div>
+                <div v-else-if="isKeywordMode(task)" class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
                   {{ t('tasks.table.keywordStrategies', { count: task.keyword_rules?.length || 0 }) }}
                 </div>
                 <div v-else class="flex flex-wrap items-center gap-2">
@@ -271,6 +302,7 @@ const emit = defineEmits<{
               <Pencil class="h-4 w-4" />
             </Button>
             <Button
+              v-if="!isAuction(task)"
               size="icon"
               variant="outline"
               class="size-10 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
@@ -345,7 +377,15 @@ const emit = defineEmits<{
               <div class="flex flex-col gap-1.5 py-1">
                 <div class="flex items-center gap-2">
                   <span class="text-base font-black text-slate-800 tracking-tight group-hover:text-primary transition-colors">{{ task.task_name }}</span>
+                  <Badge
+                    v-if="isAuction(task)"
+                    variant="outline"
+                    class="h-4 px-1.5 text-[9px] font-black border-none bg-amber-50 text-amber-600"
+                  >
+                    拍卖站
+                  </Badge>
                   <Badge 
+                    v-else
                     variant="outline" 
                     :class="[
                       'h-4 px-1.5 text-[9px] font-black border-none tracking-tighter', 
@@ -366,7 +406,7 @@ const emit = defineEmits<{
                    </div>
                 </div>
 
-                <div class="flex items-center gap-2 mt-0.5">
+                <div v-if="!isAuction(task)" class="flex items-center gap-2 mt-0.5">
                    <div class="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-tight">
                       <User class="w-3 h-3" /> {{ resolveAccountStrategyLabel(task) }}
                    </div>
@@ -380,7 +420,13 @@ const emit = defineEmits<{
 
             <!-- Column 3: Crawl Config -->
             <TableCell class="align-middle text-left">
-              <div class="space-y-2">
+              <div v-if="isAuction(task)" class="space-y-2">
+                <div class="text-sm font-black text-slate-700 tracking-tighter">玉米蛇 · 王蛇</div>
+                <Badge variant="outline" class="text-[9px] h-4 border-slate-100 text-slate-400 px-1.5 font-bold bg-white/40">
+                  拍卖站在拍名单
+                </Badge>
+              </div>
+              <div v-else class="space-y-2">
                 <div class="flex items-baseline gap-0.5">
                   <span class="text-[10px] font-bold text-slate-400 mr-1 italic">¥</span>
                   <span class="text-sm font-black text-slate-700 tracking-tighter">
@@ -403,12 +449,19 @@ const emit = defineEmits<{
 
             <!-- Column 4: AI/Keyword Mode Details -->
             <TableCell class="align-middle text-center">
-              <div class="inline-flex flex-col items-center gap-2">
-                <div v-if="isKeywordMode(task)" class="bg-blue-50/30 p-2 rounded-xl border border-blue-100/50">
+              <div v-if="isAuction(task)" class="inline-flex flex-col items-center gap-2">
+                <div class="bg-amber-50/30 p-2 rounded-xl border border-amber-100/50">
+                  <div class="text-xs font-black text-amber-600">{{ t('tasks.table.keywordStrategies', { count: task.keyword_rules?.length || 0 }) }}</div>
+                  <div class="text-[9px] font-bold text-amber-400/70 uppercase mt-0.5 tracking-tighter">重点监控</div>
+                </div>
+              </div>
+              <div v-else-if="isKeywordMode(task)" class="inline-flex flex-col items-center gap-2">
+                <div class="bg-blue-50/30 p-2 rounded-xl border border-blue-100/50">
                   <div class="text-xs font-black text-blue-600">{{ t('tasks.table.keywordStrategies', { count: task.keyword_rules?.length || 0 }) }}</div>
                   <div class="text-[9px] font-bold text-blue-400/70 uppercase mt-0.5 tracking-tighter">OR Logic</div>
                 </div>
-                <div v-else class="flex flex-col items-center gap-1.5">
+              </div>
+              <div v-else class="flex flex-col items-center gap-1.5">
                   <div 
                     class="px-2 py-1 rounded bg-emerald-50/50 border border-emerald-100/50 text-[9px] font-mono font-black text-emerald-600 truncate max-w-[140px]"
                     :title="task.ai_prompt_criteria_file"
@@ -426,12 +479,18 @@ const emit = defineEmits<{
                     <RefreshCcw class="w-2.5 h-2.5 mr-1" /> {{ t('tasks.table.refreshCriteria') }}
                   </Button>
                 </div>
-              </div>
             </TableCell>
 
             <!-- Column 5: Cron & Pages -->
             <TableCell class="align-middle text-center">
-              <div class="inline-flex flex-col items-center gap-1.5">
+              <div v-if="isAuction(task)" class="inline-flex flex-col items-center gap-1.5">
+                <div class="flex items-center gap-1.5 bg-amber-50/60 border border-amber-100/80 px-2 py-1 rounded-lg">
+                  <Clock class="w-3 h-3 text-slate-400" />
+                  <span class="text-[11px] font-black text-slate-600 tracking-tight">后台轮询</span>
+                </div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">自动采集在拍名单</div>
+              </div>
+              <div v-else class="inline-flex flex-col items-center gap-1.5">
                 <div class="flex items-center gap-1.5 bg-slate-100/50 border border-slate-200/30 px-2 py-1 rounded-lg">
                   <Clock class="w-3 h-3 text-slate-400" />
                   <span class="text-[11px] font-black text-slate-600 tracking-tight">{{ task.cron || 'MANUAL' }}</span>
@@ -500,10 +559,11 @@ const emit = defineEmits<{
                   >
                     <Pencil class="w-3.5 h-3.5" />
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    class="w-8 h-8 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors" 
+                  <Button
+                    v-if="!isAuction(task)"
+                    size="icon"
+                    variant="ghost"
+                    class="w-8 h-8 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
                     :aria-label="`${t('common.delete')} ${task.task_name}`"
                     :title="`${t('common.delete')} ${task.task_name}`"
                     @click="emit('delete-task', task.id)"

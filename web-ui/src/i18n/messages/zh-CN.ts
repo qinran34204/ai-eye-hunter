@@ -2,7 +2,7 @@ import zhCNExtra from '@/i18n/messages/zh-CN-extra'
 
 const zhCN = {
   app: {
-    name: '闲鱼智能监控',
+    name: 'AI Eye Hunter',
   },
   locale: {
     switchLabel: '切换语言',
@@ -17,6 +17,7 @@ const zhCN = {
     results: '结果查看',
     logs: '运行日志',
     settings: '系统设置',
+    auction: '拍卖站监控',
   },
   common: {
     cancel: '取消',
@@ -73,6 +74,7 @@ const zhCN = {
     results: '结果查看',
     logs: '运行日志',
     settings: '系统设置',
+    auction: '拍卖站监控',
     systemStatus: '系统状态',
     backendConnected: '后端实时已连接',
     backendConnecting: '后端连接中',

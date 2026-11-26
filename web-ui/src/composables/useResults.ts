@@ -62,16 +62,20 @@ export function useResults() {
   // Methods
   async function fetchFiles() {
     try {
-      const fileList = await resultsApi.getResultFiles()
+      const fileList = (await resultsApi.getResultFiles()).filter(
+        (file) => getKeywordFromFilename(file) !== '拍卖站',
+      )
       files.value = fileList
       // If a file is selected that no longer exists, reset it.
-      // Otherwise, if nothing is selected, select the first file by default.
+      // Otherwise, if nothing is selected, select the first (latest) file by default.
       if (selectedFile.value && fileList.includes(selectedFile.value)) {
         return
       }
 
+      // 默认打开最新结果文件；仅当上次记住的就是最新项时才沿用记忆，
+      // 避免多词拆分后遗留的旧整串文件把新商品挡在默认视图之外。
       const lastSelected = localStorage.getItem('lastSelectedResultFile')
-      if (lastSelected && fileList.includes(lastSelected)) {
+      if (lastSelected && lastSelected === fileList[0]) {
         selectedFile.value = lastSelected
         return
       }
@@ -140,12 +144,24 @@ export function useResults() {
     }
   }
 
+  function splitTaskKeywords(keyword: string): string[] {
+    return keyword
+      .split(/[\n,，、;；/]+/)
+      .map((term) => normalizeKeyword(term))
+      .filter(Boolean)
+  }
+
   async function fetchTaskNameMap() {
     try {
       const tasks = await tasksApi.getAllTasks()
       const mapping: Record<string, string> = {}
       tasks.forEach((task) => {
         if (task.keyword) {
+          // 整串关键词与拆分出的每个搜索词都映射到同一任务名，
+          // 兼容一任务多词、逐词落独立结果文件的场景。
+          splitTaskKeywords(task.keyword).forEach((term) => {
+            mapping[term] = task.task_name
+          })
           mapping[normalizeKeyword(task.keyword)] = task.task_name
         }
       })
@@ -273,10 +289,11 @@ export function useResults() {
     { immediate: true }
   )
 
-  const fileOptions = computed(() =>
-    files.value.map((file) => {
+  const fileOptions = computed(() => {
+    const fixedAlias: Record<string, string> = { '拍卖站': t('sidebar.auction') }
+    return files.value.map((file) => {
       const keyword = getKeywordFromFilename(file)
-      const taskName = taskNameByKeyword.value[keyword]
+      const taskName = taskNameByKeyword.value[keyword] || fixedAlias[keyword]
       return {
         value: file,
         taskName: taskName || t('common.unnamed'),
@@ -285,7 +302,7 @@ export function useResults() {
         }),
       }
     })
-  )
+  })
 
   // Lifecycle
   onMounted(() => {

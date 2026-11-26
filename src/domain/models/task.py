@@ -130,6 +130,7 @@ class Task(BaseModel):
     decision_mode: Literal["ai", "keyword"] = "ai"
     keyword_rules: List[str] = Field(default_factory=list)
     is_running: bool = False
+    source: Literal["xianyu", "auction"] = "xianyu"
 
     @model_validator(mode="before")
     @classmethod
@@ -179,6 +180,7 @@ class TaskCreate(BaseModel):
     region: Optional[str] = None
     decision_mode: Literal["ai", "keyword"] = "ai"
     keyword_rules: List[str] = Field(default_factory=list)
+    source: Literal["xianyu", "auction"] = "xianyu"
 
     @model_validator(mode="before")
     @classmethod
@@ -247,6 +249,7 @@ class TaskUpdate(BaseModel):
     decision_mode: Optional[Literal["ai", "keyword"]] = None
     keyword_rules: Optional[List[str]] = None
     is_running: Optional[bool] = None
+    source: Optional[Literal["xianyu", "auction"]] = None
 
     @model_validator(mode="before")
     @classmethod

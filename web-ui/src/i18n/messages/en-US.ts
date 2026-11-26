@@ -2,7 +2,7 @@ import enUSExtra from '@/i18n/messages/en-US-extra'
 
 const enUS = {
   app: {
-    name: 'Goofish Monitor',
+    name: 'AI Eye Hunter',
   },
   locale: {
     switchLabel: 'Switch language',
@@ -17,6 +17,7 @@ const enUS = {
     results: 'Results',
     logs: 'Logs',
     settings: 'Settings',
+    auction: 'Auction Watch',
   },
   common: {
     cancel: 'Cancel',
@@ -73,6 +74,7 @@ const enUS = {
     results: 'Results',
     logs: 'Logs',
     settings: 'Settings',
+    auction: 'Auction Watch',
     systemStatus: 'System Status',
     backendConnected: 'Realtime backend connected',
     backendConnecting: 'Connecting to backend',

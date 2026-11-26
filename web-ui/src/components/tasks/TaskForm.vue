@@ -29,6 +29,8 @@ const emit = defineEmits<{
 }>()
 const { t } = useI18n()
 
+const isAuction = computed(() => props.initialData?.source === 'auction')
+
 const form = ref<any>({})
 const accountStrategy = ref<'auto' | 'fixed' | 'rotate'>('auto')
 const selectedAccountStateFile = ref(AUTO_ACCOUNT_VALUE)
@@ -193,7 +195,8 @@ function handleSubmit() {
     return
   }
 
-  const decisionMode = form.value.decision_mode || 'ai'
+  const auctionMode = isAuction.value
+  const decisionMode = auctionMode ? 'keyword' : (form.value.decision_mode || 'ai')
   if (decisionMode === 'ai' && !String(form.value.description || '').trim()) {
     toast({
       title: t('tasks.form.validation.incomplete'),
@@ -204,7 +207,7 @@ function handleSubmit() {
   }
 
   const keywordRules = parseKeywordText(keywordRulesInput.value)
-  if (decisionMode === 'keyword' && keywordRules.length === 0) {
+  if (decisionMode === 'keyword' && !auctionMode && keywordRules.length === 0) {
     toast({
       title: t('tasks.form.validation.keywordRuleIncomplete'),
       description: t('tasks.form.validation.keywordRuleRequired'),
@@ -215,8 +218,8 @@ function handleSubmit() {
 
   // Filter out fields that shouldn't be sent in update requests
   const { id, is_running, next_run_at, ...submitData } = form.value as any
-  const currentAccountStrategy = accountStrategy.value || 'auto'
-  if (currentAccountStrategy === 'fixed') {
+  const currentAccountStrategy = auctionMode ? 'auto' : (accountStrategy.value || 'auto')
+  if (!auctionMode && currentAccountStrategy === 'fixed') {
     const currentAccountStateFile = selectedAccountStateFile.value || AUTO_ACCOUNT_VALUE
     if (currentAccountStateFile === AUTO_ACCOUNT_VALUE) {
       toast({
@@ -264,11 +267,11 @@ function handleSubmit() {
         <Label for="task-name" class="sm:text-right">{{ t('tasks.form.taskName') }}</Label>
         <Input id="task-name" v-model="form.task_name" class="sm:col-span-3" :placeholder="t('tasks.form.taskNamePlaceholder')" required />
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label for="keyword" class="sm:text-right">{{ t('tasks.form.keyword') }}</Label>
         <Input id="keyword" v-model="form.keyword" class="sm:col-span-3" :placeholder="t('tasks.form.keywordPlaceholder')" required />
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label class="sm:text-right">{{ t('tasks.form.decisionMode') }}</Label>
         <div class="sm:col-span-3">
           <Select v-model="form.decision_mode">
@@ -319,7 +322,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label class="sm:text-right">{{ t('tasks.form.priceRange') }}</Label>
         <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:col-span-3">
           <Input type="number" v-model="form.min_price as any" :aria-label="t('tasks.form.minPrice')" :placeholder="t('tasks.form.minPrice')" />
@@ -327,11 +330,11 @@ function handleSubmit() {
           <Input type="number" v-model="form.max_price as any" :aria-label="t('tasks.form.maxPrice')" :placeholder="t('tasks.form.maxPrice')" />
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label for="max-pages" class="sm:text-right">{{ t('tasks.form.maxPages') }}</Label>
         <Input id="max-pages" v-model.number="form.max_pages" type="number" class="sm:col-span-3" />
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label for="cron" class="sm:text-right">{{ t('tasks.form.schedule') }}</Label>
         <div class="space-y-2 sm:col-span-3">
           <Tabs v-model="cronMode" class="w-full">
@@ -367,7 +370,7 @@ function handleSubmit() {
           </Tabs>
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label class="sm:text-right">{{ t('tasks.form.accountStrategyLabel') }}</Label>
         <div class="space-y-2 sm:col-span-3">
           <select
@@ -399,19 +402,19 @@ function handleSubmit() {
           </select>
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label for="personal-only" class="sm:text-right">{{ t('tasks.form.personalOnly') }}</Label>
         <div class="sm:col-span-3">
           <Switch id="personal-only" v-model="form.personal_only" />
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label for="free-shipping" class="sm:text-right">{{ t('tasks.form.freeShipping') }}</Label>
         <div class="sm:col-span-3">
           <Switch id="free-shipping" v-model="form.free_shipping" />
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label class="sm:text-right">{{ t('tasks.form.newPublish') }}</Label>
         <div class="sm:col-span-3">
           <Select v-model="form.new_publish_option as any">
@@ -429,7 +432,7 @@ function handleSubmit() {
           </Select>
         </div>
       </div>
-      <div class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+      <div v-if="!isAuction" class="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
         <Label class="sm:text-right">{{ t('tasks.form.region') }}</Label>
         <div class="space-y-1 sm:col-span-3">
           <TaskRegionSelector v-model="form.region as any" />

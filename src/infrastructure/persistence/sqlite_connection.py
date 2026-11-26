@@ -43,7 +43,8 @@ SCHEMA_STATEMENTS = (
         region TEXT,
         decision_mode TEXT NOT NULL,
         keyword_rules_json TEXT NOT NULL,
-        is_running INTEGER NOT NULL
+        is_running INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT 'xianyu'
     )
     """,
     """
@@ -97,6 +98,27 @@ SCHEMA_STATEMENTS = (
         updated_at TEXT NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS auction_history (
+        mark TEXT PRIMARY KEY,
+        gene TEXT,
+        category TEXT,
+        name TEXT,
+        sex TEXT,
+        weight TEXT,
+        tags_json TEXT NOT NULL DEFAULT '[]',
+        start_price REAL,
+        current_bid REAL,
+        bid_num INTEGER NOT NULL DEFAULT 0,
+        freight REAL,
+        deal_price REAL,
+        has_bid INTEGER NOT NULL DEFAULT 0,
+        status TEXT,
+        off_time TEXT,
+        img TEXT,
+        updated_at TEXT
+    )
+    """,
     "CREATE INDEX IF NOT EXISTS idx_tasks_name ON tasks(task_name)",
     """
     CREATE INDEX IF NOT EXISTS idx_results_filename_crawl
@@ -122,6 +144,7 @@ SCHEMA_STATEMENTS = (
     CREATE INDEX IF NOT EXISTS idx_snapshots_keyword_item_time
     ON price_snapshots(keyword_slug, item_id, snapshot_time DESC)
     """,
+    "CREATE INDEX IF NOT EXISTS idx_auction_history_gene ON auction_history(gene, off_time)",
 )
 
 
@@ -143,7 +166,25 @@ def init_schema(conn: sqlite3.Connection) -> None:
     for statement in SCHEMA_STATEMENTS:
         conn.execute(statement)
     _migrate_result_items_status(conn)
+    _migrate_tasks_source(conn)
     conn.commit()
+
+
+def _migrate_tasks_source(conn: sqlite3.Connection) -> None:
+    """为 tasks 表添加 source 列（仅执行一次）。"""
+    row = conn.execute(
+        "SELECT value FROM app_metadata WHERE key = 'migration:tasks_source'"
+    ).fetchone()
+    if row is not None:
+        return
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(tasks)").fetchall()]
+    if "source" not in cols:
+        conn.execute(
+            "ALTER TABLE tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'xianyu'"
+        )
+    conn.execute(
+        "INSERT OR REPLACE INTO app_metadata(key, value) VALUES ('migration:tasks_source', 'done')"
+    )
 
 
 def _migrate_result_items_status(conn: sqlite3.Connection) -> None:

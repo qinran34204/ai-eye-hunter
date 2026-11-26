@@ -8,7 +8,7 @@ import requests
 
 from src.infrastructure.config.settings import DEFAULT_TELEGRAM_API_BASE_URL
 
-from .base import NotificationClient
+from .base import APP_NAME, NotificationClient
 
 
 class TelegramClient(NotificationClient):
@@ -38,13 +38,19 @@ class TelegramClient(NotificationClient):
 
         message = self._build_message(product_data, reason)
         telegram_message = [
-            "🚨 <b>新推荐!</b>",
+            f"🚨 <b>{APP_NAME} 新推荐!</b>",
             "",
             f"<b>{message.title[:50]}{'...' if len(message.title) > 50 else ''}</b>",
             "",
             f"💰 价格: {message.price}",
-            f"📝 原因: {message.reason}",
         ]
+        if message.spec:
+            telegram_message.append(f"🐍 规格: {message.spec}")
+        if message.seller:
+            telegram_message.append(f"👤 卖家: {message.seller}")
+        if message.risk_tags:
+            telegram_message.append(f"⚠️ 风险: {', '.join(message.risk_tags)}")
+        telegram_message.append(f"📝 原因: {message.reason}")
         if message.mobile_link:
             telegram_message.append(f"📱 <a href='{message.mobile_link}'>手机端链接</a>")
         telegram_message.append(f"💻 <a href='{message.desktop_link}'>电脑端链接</a>")

@@ -199,7 +199,7 @@ class AIClient:
         messages: List[Dict],
         *,
         temperature: float = 0.1,
-        max_output_tokens: int = 4000,
+        max_output_tokens: int = 8000,
         enable_json_output: Optional[bool] = None,
     ) -> str:
         """调用 AI API"""

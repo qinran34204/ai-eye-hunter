@@ -2,8 +2,12 @@
 新架构的主应用入口
 整合所有路由和服务
 """
+import asyncio
+import contextlib
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+
+from src.auction import adapter as auction_adapter
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -17,6 +21,7 @@ from src.api.routes import (
     login_state,
     websocket,
     accounts,
+    auction,
 )
 from src.api.dependencies import (
     set_process_service,
@@ -73,6 +78,9 @@ async def lifespan(app: FastAPI):
     # 重置所有任务状态为停止
     task_repo = SqliteTaskRepository()
     task_service = TaskService(task_repo)
+
+    # 确保拍卖站监控任务存在（种子记录），再加载任务与定时规则
+    auction_adapter.ensure_auction_task()
     tasks_list = await task_service.get_all_tasks()
 
     for task in tasks_list:
@@ -83,12 +91,22 @@ async def lifespan(app: FastAPI):
     await scheduler_service.reload_jobs(tasks_list)
     scheduler_service.start()
 
+    # 拍卖站（易宠宝）后台轮询适配器
+    auction_stop_event = asyncio.Event()
+    auction_task = asyncio.create_task(
+        auction_adapter.start_background(auction_stop_event)
+    )
+
     print("应用启动完成")
 
     yield
 
     # 关闭时
     print("正在关闭应用...")
+    auction_stop_event.set()
+    auction_task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await auction_task
     scheduler_service.stop()
     await process_service.stop_all()
     print("应用已关闭")
@@ -96,7 +114,7 @@ async def lifespan(app: FastAPI):
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title="闲鱼智能监控机器人",
+    title="AI Eye Hunter",
     description="基于AI的闲鱼商品监控系统",
     version="2.0.0",
     lifespan=lifespan
@@ -112,6 +130,7 @@ app.include_router(results.router)
 app.include_router(login_state.router)
 app.include_router(websocket.router)
 app.include_router(accounts.router)
+app.include_router(auction.router)
 
 # 挂载静态文件
 # 旧的静态文件目录（用于截图等）

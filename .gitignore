@@ -15,3 +15,12 @@ prompts/
 .serena/
 price_history/
 data/
+
+# 运行日志、本地数据库与导出数据（不上传）
+*.log
+*.sqlite3
+*.sqlite
+*.jsonl
+
+# 本地启动脚本（含本机绝对路径，不公开）
+启动监控.bat

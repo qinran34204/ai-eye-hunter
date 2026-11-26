@@ -32,8 +32,8 @@ def test_item_analysis_dispatcher_uses_bounded_concurrency():
             "keyword_hit_count": 0,
         }
 
-    async def notifier(item_data: dict, reason: str):
-        notifications.append((item_data["商品ID"], reason))
+    async def notifier(record: dict, reason: str):
+        notifications.append((record["商品信息"]["商品ID"], reason))
 
     async def saver(record: dict, keyword: str):
         saved_records.append((keyword, record))

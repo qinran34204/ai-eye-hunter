@@ -23,6 +23,7 @@ export interface Task {
   decision_mode: 'ai' | 'keyword';
   keyword_rules: string[];
   is_running: boolean;
+  source?: 'xianyu' | 'auction';
 }
 
 export type TaskGenerationStatus = 'queued' | 'running' | 'completed' | 'failed';
