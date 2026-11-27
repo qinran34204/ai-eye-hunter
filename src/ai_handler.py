@@ -239,8 +239,8 @@ def encode_image_to_base64(image_path):
 
 def validate_ai_response_format(parsed_response):
     """验证AI响应的格式是否符合预期结构"""
+    # prompt_version 仅为版本元数据，下游业务不读取；模型省略时补默认值，不作为硬门槛。
     required_fields = [
-        "prompt_version",
         "is_recommended",
         "reason",
         "risk_tags",
@@ -273,6 +273,8 @@ def validate_ai_response_format(parsed_response):
         safe_print("   [AI分析] 警告：risk_tags字段不是列表类型")
         return False
 
+    # 补全可选元数据字段，避免下游取不到
+    parsed_response.setdefault("prompt_version", "AI-EyeHunter-1.0")
     return True
 
 

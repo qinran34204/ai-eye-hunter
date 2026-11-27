@@ -47,8 +47,8 @@ class AIAnalysisService:
 
     def _validate_result(self, result: Dict) -> bool:
         """验证 AI 分析结果的格式"""
+        # prompt_version 仅为版本元数据，缺失时补默认值，不作为硬门槛。
         required_fields = [
-            "prompt_version",
             "is_recommended",
             "reason",
             "risk_tags",
@@ -75,4 +75,5 @@ class AIAnalysisService:
             print("criteria_analysis 必须是非空字典")
             return False
 
+        result.setdefault("prompt_version", "AI-EyeHunter-1.0")
         return True

@@ -18,13 +18,6 @@
 - **账号与代理轮换**: 多账号管理、任务绑定账号、代理池轮换与失败重试
 - **Docker 部署**: 一键容器化部署
 
-## 截图
-
-![监控概览](static/img.png)
-![任务管理](static/img_1.png)
-![结果查看](static/img_2.png)
-![通知推送](static/img_3.png)
-
 ## 🐳 Docker 部署（推荐）
 
 ```bash

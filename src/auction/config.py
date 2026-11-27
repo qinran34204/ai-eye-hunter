@@ -8,6 +8,12 @@ import copy
 import json
 import os
 
+from dotenv import load_dotenv
+
+# 必须在构建 CONFIG 前加载 .env：本模块可能在 src.config 的 load_dotenv 之前被
+# 导入，若依赖外部导入顺序，模块级 CONFIG 会把空的商户/应用号固化下来。
+load_dotenv()
+
 # 工程根目录（src/auction/config.py → 上两级）
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOCAL_CONFIG_PATH = os.path.join(ROOT_DIR, "auction_config.local.json")
